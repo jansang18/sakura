@@ -1,0 +1,7 @@
+# 배포 업로드에서 제외 (Vercel이 빌드 시 dist 재생성)
+node_modules
+dist
+.expo
+# 루트 원본 로고 소스(에셋은 assets/images에 복사돼 있음)
+in.png
+bt.png
