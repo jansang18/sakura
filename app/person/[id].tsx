@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, ELEMENTS, F, R, SP } from '../../constants/theme';
+import ReportBlockMenu from '../../components/ReportBlockMenu';
 import { fetchDeepReport } from '../../lib/ai/report';
 import { acceptMatch } from '../../lib/store/social';
 import { findPerson } from '../../lib/mock/people';
@@ -86,8 +87,11 @@ export default function PersonPreview() {
           <Text style={s.back}>←</Text>
         </Pressable>
         <Text style={s.headerTitle}>사람 미리보기</Text>
-        <View style={s.points}>
-          <Text style={s.pointsText}>🌸 {balance.toLocaleString()}P</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={s.points}>
+            <Text style={s.pointsText}>🌸 {balance.toLocaleString()}P</Text>
+          </View>
+          <ReportBlockMenu targetId={person.id} targetName={person.name} tint={C.moonDim} onBlocked={() => router.back()} />
         </View>
       </View>
 

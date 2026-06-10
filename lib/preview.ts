@@ -3,11 +3,9 @@
 // ─────────────────────────────────────────────
 
 import type { Person } from './mock/people';
+import { myInterests } from './store/interests';
 import { getProfile } from './store/profile';
 import { compatibility, computeSaju, personality, type Gunghap, type Personality, type SajuChart } from './saju';
-
-// 내 관심사 — 추후 가입한 소모임에서 채워짐. 지금은 취향 궁합 데모용 기본값.
-const MY_INTERESTS = ['카페', '사주공부', '영화', '산책', '글쓰기'];
 
 export interface Preview {
   chart: SajuChart;
@@ -33,11 +31,12 @@ function tasteCompat(a: string[], b: string[]): number {
 export function buildPreview(p: Person): Preview {
   const me = myChart();
   const chart = computeSaju(p.birth);
+  const mine = myInterests();
   return {
     chart,
     persona: personality(chart),
     gunghap: compatibility(me, chart),
-    shared: p.interests.filter((i) => MY_INTERESTS.includes(i)),
-    tasteScore: tasteCompat(MY_INTERESTS, p.interests),
+    shared: p.interests.filter((i) => mine.includes(i)),
+    tasteScore: tasteCompat(mine, p.interests),
   };
 }

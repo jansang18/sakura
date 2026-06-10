@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, F, R, SP } from '../constants/theme';
 import { buildDailyMatches, type DailyMatch } from '../lib/match/daily';
 import { PEOPLE } from '../lib/mock/people';
+import { useInterests } from '../lib/store/interests';
+import { useModeration } from '../lib/store/moderation';
 import { usePoints } from '../lib/store/points';
 import { useSocial } from '../lib/store/social';
 import { PURPOSES, type Purpose, useProfile } from '../lib/store/profile';
@@ -80,14 +82,19 @@ function MatchCard({ m, onPass }: { m: DailyMatch; onPass: () => void }) {
 }
 
 export default function Home() {
+  const router = useRouter();
   const profile = useProfile();
   const { balance, spend, charge } = usePoints();
-  const matches = useMemo(() => buildDailyMatches(profile, PEOPLE), [profile]);
+  const { isBlocked } = useModeration();
+  const { joinedCount } = useInterests();
+  const matches = useMemo(() => buildDailyMatches(profile, PEOPLE), [profile, joinedCount]);
 
   const [revealed, setRevealed] = useState(3);
   const [passed, setPassed] = useState<string[]>([]);
 
-  const visible = matches.slice(0, revealed).filter((m) => !passed.includes(m.person.id));
+  const visible = matches
+    .slice(0, revealed)
+    .filter((m) => !passed.includes(m.person.id) && !isBlocked(m.person.id));
   const poolRemaining = matches.length - revealed;
 
   function pass(id: string) {
@@ -100,18 +107,26 @@ export default function Home() {
   return (
     <SafeAreaView style={s.root} edges={['top']}>
       <View style={s.header}>
+        <Pressable style={s.meBtn} onPress={() => router.push('/me')} hitSlop={8}>
+          <Text style={s.meText}>나</Text>
+        </Pressable>
         <Text style={s.brand}>
           오늘의 <Text style={{ color: C.thread }}>벚꽃 인연</Text>
         </Text>
-        <View style={s.points}>
+        <Pressable style={s.points} onPress={() => router.push('/shop')}>
           <Text style={s.pointsText}>🌸 {balance.toLocaleString()}P</Text>
-        </View>
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={{ padding: SP.lg, paddingTop: SP.sm }} showsVerticalScrollIndicator={false}>
         <Text style={s.lead}>
           {profile.gu} 근처에서, 사주 궁합과 거리로 고른{'\n'}오늘의 인연 {Math.min(3, matches.length)}명이 도착했어요 🌸
         </Text>
+
+        <Pressable style={s.topicLink} onPress={() => router.push('/topics')}>
+          <Text style={s.topicLinkText}>🎨 동네 소모임 둘러보기</Text>
+          <Text style={s.topicArrow}>›</Text>
+        </Pressable>
 
         {visible.map((m) => (
           <MatchCard key={m.person.id} m={m} onPass={() => pass(m.person.id)} />
@@ -151,10 +166,15 @@ const s = StyleSheet.create({
     paddingHorizontal: SP.lg,
     paddingVertical: SP.sm,
   },
-  brand: { fontFamily: F.serif, fontSize: 22, color: C.moon },
+  brand: { flex: 1, textAlign: 'center', fontFamily: F.serif, fontSize: 21, color: C.moon },
+  meBtn: { width: 34, height: 34, borderRadius: R.pill, backgroundColor: C.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.line2 },
+  meText: { fontFamily: F.sansBold, fontSize: 13, color: C.moon },
   points: { backgroundColor: C.goldSoft, borderRadius: R.pill, paddingHorizontal: 12, paddingVertical: 6 },
   pointsText: { fontFamily: F.sansMed, fontSize: 12.5, color: C.gold },
   lead: { fontFamily: F.sans, fontSize: 13.5, color: C.moonDim, lineHeight: 21, marginBottom: SP.md },
+  topicLink: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.surface, borderRadius: R.md, paddingHorizontal: SP.md, paddingVertical: 13, marginBottom: SP.md, borderWidth: 1, borderColor: C.line },
+  topicLinkText: { fontFamily: F.sansMed, fontSize: 14, color: C.moon },
+  topicArrow: { fontFamily: F.sans, fontSize: 18, color: C.moonDim },
 
   card: { backgroundColor: C.surface, borderRadius: R.md, marginBottom: SP.sm, borderWidth: 1, borderColor: C.line },
   cardBody: { padding: SP.md },

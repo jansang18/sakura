@@ -19,7 +19,8 @@ export const supabase: SupabaseClient | null =
           storage: Platform.OS === 'web' ? undefined : AsyncStorage,
           autoRefreshToken: true,
           persistSession: true,
-          detectSessionInUrl: false,
+          // 웹은 OAuth 리다이렉트 복귀 시 URL에서 세션 감지
+          detectSessionInUrl: Platform.OS === 'web',
         },
       })
     : null;

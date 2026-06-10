@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, F, R, SP } from '../constants/theme';
+import { detectGu } from '../lib/geo';
 import { saveMyProfile } from '../lib/db/profile';
 import { PURPOSES, type MyProfile, type Purpose, setProfile } from '../lib/store/profile';
 
@@ -20,6 +21,14 @@ const GU_LIST = [
   '도봉구', '노원구', '은평구', '서대문구', '마포구', '양천구', '강서구', '구로구', '금천구',
   '영등포구', '동작구', '관악구', '서초구', '강남구', '송파구', '강동구',
 ];
+
+// 실제 존재하는 날짜인지 검증 (2/31, 비윤년 2/29 등 차단)
+function isValidDate(calendar: 'solar' | 'lunar', y: number, m: number, d: number): boolean {
+  if (m < 1 || m > 12 || d < 1) return false;
+  if (calendar === 'lunar') return d <= 30; // 음력 대소월/윤달은 만세력 라이브러리가 처리
+  const dt = new Date(y, m - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === m - 1 && dt.getDate() === d;
+}
 
 // 작은 세그먼트 토글
 function Seg<T extends string>({
@@ -62,6 +71,16 @@ export default function Onboarding() {
   // 구 / 목적
   const [gu, setGu] = useState<string | null>(null);
   const [purposes, setPurposes] = useState<Purpose[]>([]);
+  const [geoMsg, setGeoMsg] = useState('');
+
+  async function onDetectGu() {
+    setGeoMsg('현재 위치 확인 중…');
+    const { gu: detected, denied } = await detectGu();
+    if (denied) return setGeoMsg('위치 권한이 거부됐어요. 아래에서 직접 선택해주세요.');
+    if (!detected) return setGeoMsg('위치를 못 찾았어요. 직접 선택해주세요.');
+    setGu(detected);
+    setGeoMsg(`📍 ${detected}${GU_LIST.includes(detected) ? ' 선택됨' : ' (목록에 없으면 직접 선택)'}`);
+  }
 
   const y = Number(year);
   const m = Number(month);
@@ -69,8 +88,7 @@ export default function Onboarding() {
   const h = Number(hour);
   const step0Valid =
     year.length === 4 && y >= 1900 && y <= 2025 &&
-    m >= 1 && m <= 12 &&
-    d >= 1 && d <= 31 &&
+    isValidDate(calendar, y, m, d) &&
     gender !== null &&
     (unknownTime || (hour !== '' && h >= 0 && h <= 23));
   const step1Valid = gu !== null;
@@ -222,6 +240,10 @@ export default function Onboarding() {
             <>
               <Text style={s.title}>어느 동네에서 만날까요?</Text>
               <Text style={s.sub}>걸어서 닿는 우리 구(區)를 골라주세요.</Text>
+              <Pressable style={s.gpsBtn} onPress={onDetectGu}>
+                <Text style={s.gpsText}>📍 현재 위치로 인증</Text>
+              </Pressable>
+              {geoMsg ? <Text style={s.geoMsg}>{geoMsg}</Text> : null}
               <View style={s.guWrap}>
                 {GU_LIST.map((g) => {
                   const on = g === gu;
@@ -309,6 +331,9 @@ const s = StyleSheet.create({
   checkMark: { color: C.onThread, fontSize: 13, fontFamily: F.sansBold },
   checkLabel: { fontFamily: F.sans, fontSize: 14, color: C.moon },
 
+  gpsBtn: { alignSelf: 'flex-start', backgroundColor: C.threadSoft, borderRadius: R.pill, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: C.thread, marginBottom: SP.sm },
+  gpsText: { fontFamily: F.sansMed, fontSize: 13, color: C.thread },
+  geoMsg: { fontFamily: F.sans, fontSize: 12, color: C.moonDim, marginBottom: SP.sm },
   guWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   guChip: { backgroundColor: C.surface, borderRadius: R.pill, paddingHorizontal: 14, paddingVertical: 9, borderWidth: 1, borderColor: C.line },
   guChipOn: { backgroundColor: C.threadSoft, borderColor: C.thread },

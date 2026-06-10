@@ -38,6 +38,9 @@ yarn-error.*
 # Vercel
 .vercel
 
+# 루트 원본 미디어(사용본은 assets/에 복사돼 있음)
+/bt.mp4
+
 # typescript
 *.tsbuildinfo
 

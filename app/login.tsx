@@ -1,9 +1,12 @@
+import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import { ImageBackground, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { F, R, SP } from '../constants/theme';
+import { supabase } from '../lib/supabase';
 
 // 카카오 말풍선 심볼
 function KakaoBubble() {
@@ -44,29 +47,66 @@ function AuthButton({
 export default function Login() {
   const router = useRouter();
 
-  // 실제 OAuth(카카오/네이버 SDK + 키)는 추후 연동. 지금은 온보딩으로 진행.
+  // 미설정(키 없음/실패) 시 데모 진행
   const start = () => router.push('/onboarding');
+
+  // 카카오: Supabase OAuth (프로바이더 활성화 + 키 필요)
+  async function kakaoLogin() {
+    if (!supabase) return start();
+    try {
+      const redirectTo = Linking.createURL('/');
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: { redirectTo, skipBrowserRedirect: Platform.OS !== 'web' },
+      });
+      if (error || !data?.url) return start();
+      if (Platform.OS === 'web') return; // 웹은 자동 리다이렉트
+      const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      if (res.type === 'success' && res.url) {
+        const code = Linking.parse(res.url).queryParams?.code;
+        if (typeof code === 'string') await supabase.auth.exchangeCodeForSession(code);
+      }
+      router.replace('/onboarding');
+    } catch {
+      start();
+    }
+  }
+
+  // 네이버: 자체 콜백 Edge Function 경유 (EXPO_PUBLIC_NAVER_* 설정 시)
+  async function naverLogin() {
+    const clientId = process.env.EXPO_PUBLIC_NAVER_CLIENT_ID;
+    const callback = process.env.EXPO_PUBLIC_NAVER_CALLBACK;
+    if (!clientId || !callback) return start();
+    try {
+      const authUrl =
+        'https://nid.naver.com/oauth2.0/authorize?response_type=code' +
+        `&client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(callback)}&state=dnbk`;
+      await WebBrowser.openAuthSessionAsync(authUrl, Linking.createURL('/'));
+      router.replace('/onboarding');
+    } catch {
+      start();
+    }
+  }
 
   return (
     <ImageBackground source={require('../assets/images/login-bg.png')} style={s.bg} resizeMode="cover">
       <StatusBar style="dark" />
       <SafeAreaView style={s.safe} edges={['bottom']}>
-        <View style={{ flex: 1 }} />
-
         <View style={s.panel}>
           <AuthButton
             bg="#FEE500"
             color="#191600"
             label="카카오톡으로 시작하기"
             icon={<KakaoBubble />}
-            onPress={start}
+            onPress={kakaoLogin}
           />
           <AuthButton
             bg="#03C75A"
             color="#FFFFFF"
             label="네이버로 시작하기"
             icon={<Text style={s.naverN}>N</Text>}
-            onPress={start}
+            onPress={naverLogin}
           />
 
           <Pressable style={s.browse} hitSlop={8} onPress={() => router.push('/onboarding')}>
@@ -82,8 +122,16 @@ export default function Login() {
 
 const s = StyleSheet.create({
   bg: { flex: 1 },
-  safe: { flex: 1, paddingHorizontal: 24 },
-  panel: { paddingBottom: SP.lg, gap: SP.sm },
+  safe: { flex: 1, justifyContent: 'flex-end' },
+  panel: {
+    backgroundColor: 'rgba(246,238,228,0.86)',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 24,
+    paddingTop: 22,
+    paddingBottom: 26,
+    gap: SP.sm,
+  },
 
   btn: {
     height: 54,

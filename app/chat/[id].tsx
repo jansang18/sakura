@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, F, R, SP } from '../../constants/theme';
+import ReportBlockMenu from '../../components/ReportBlockMenu';
 import { findPerson } from '../../lib/mock/people';
 import { useSocial } from '../../lib/store/social';
 
@@ -73,7 +74,7 @@ export default function Chat() {
             <Text style={s.headName}>{person.name}</Text>
             <Text style={s.headTemp}>🌸 {temp.toFixed(1)}℃</Text>
           </View>
-          <View style={{ width: 24 }} />
+          <ReportBlockMenu targetId={person.id} targetName={person.name} tint={C.moonDim} onBlocked={() => router.back()} />
         </View>
 
         {/* 약속/후기 액션 바 */}
