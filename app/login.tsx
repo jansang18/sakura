@@ -90,7 +90,7 @@ export default function Login() {
   }
 
   return (
-    <ImageBackground source={require('../assets/images/login-bg.png')} style={s.bg} resizeMode="cover">
+    <ImageBackground source={require('../assets/images/login-bg.png')} style={s.bg} resizeMode="contain">
       <StatusBar style="dark" />
       <SafeAreaView style={s.safe} edges={['bottom']}>
         <View style={s.panel}>
@@ -121,7 +121,7 @@ export default function Login() {
 }
 
 const s = StyleSheet.create({
-  bg: { flex: 1 },
+  bg: { flex: 1, backgroundColor: '#F6EEE4' },
   safe: { flex: 1, justifyContent: 'flex-end' },
   panel: {
     backgroundColor: 'rgba(246,238,228,0.86)',

@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { C, F } from '../constants/theme';
 
 // 인트로 영상 (광고식) → 끝나거나 건너뛰면 환영화면으로
@@ -39,12 +39,10 @@ export default function Intro() {
 
   return (
     <View style={s.root}>
-      {/* 영상 로딩 전/실패 시 브랜드 폴백 */}
-      <Image source={require('../assets/images/logo.png')} style={StyleSheet.absoluteFill} resizeMode="contain" />
       <VideoView
         style={StyleSheet.absoluteFill}
         player={player}
-        contentFit="cover"
+        contentFit="contain"
         nativeControls={false}
       />
 
