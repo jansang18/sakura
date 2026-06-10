@@ -2,6 +2,9 @@
   "name": "dongnechingu",
   "main": "expo-router/entry",
   "version": "1.0.0",
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.104.1",
     "@expo-google-fonts/gowun-batang": "^0.4.1",
